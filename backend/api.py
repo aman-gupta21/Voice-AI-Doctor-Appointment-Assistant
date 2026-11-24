@@ -63,6 +63,11 @@ def authorize_internal(x_internal_key: str = Header(default="")):
         raise HTTPException(403, "Internal service authentication failed.")
 
 
+@app.api_route("/", methods=["GET", "HEAD"])
+def root():
+    return {"status": "ok", "service": "careline-api", "health": "/health", "docs": "/docs"}
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "careline-api"}
