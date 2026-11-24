@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowUpRight, CalendarDays, Check, ChevronDown, Clock3, HeartPulse, Mic, MicOff, Phone, PhoneOff, Plus, Search, ShieldCheck, Sparkles, Stethoscope, X } from 'lucide-react'
 import type { BotOutputData, PipecatClient as PipecatClientInstance } from '@pipecat-ai/client-js'
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
-const PIPECAT = import.meta.env.VITE_PIPECAT_URL ?? 'http://localhost:7860'
+const API = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:8000')
+const PIPECAT = import.meta.env.VITE_PIPECAT_URL ?? (import.meta.env.PROD ? '' : 'http://localhost:7860')
 const MAX_CALL_SECONDS = 500
 
 type Slot = { id: string; starts_at: string; doctor_name?: string; specialty?: string }
@@ -99,6 +99,11 @@ export default function App() {
   async function startCall() {
     setCallOpen(true); setCallState('ringing'); setSeconds(0); setMuted(false); setSpeaking(false); setTranscript([])
     pushLine('system', 'Connecting to CareLine')
+    if (!PIPECAT) {
+      setCallState('error')
+      pushLine('system', 'Voice calling is not configured on this deployment yet.')
+      return
+    }
     try {
       await new Promise(resolve => window.setTimeout(resolve, 650))
       setCallState('connecting')

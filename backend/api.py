@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import os
 import hmac
+from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import date
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException, Response
+from fastapi import Depends, FastAPI, FileResponse, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import store
@@ -22,6 +24,8 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="CareLine API", version="1.0.0", lifespan=lifespan)
+WEB_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+app.mount("/assets", StaticFiles(directory=WEB_DIST / "assets", check_dir=False), name="frontend-assets")
 origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False,
                    allow_methods=["GET", "POST", "DELETE"], allow_headers=["*"])
@@ -65,6 +69,9 @@ def authorize_internal(x_internal_key: str = Header(default="")):
 
 @app.api_route("/", methods=["GET", "HEAD"])
 def root():
+    index = WEB_DIST / "index.html"
+    if index.is_file():
+        return FileResponse(index)
     return {"status": "ok", "service": "careline-api", "health": "/health", "docs": "/docs"}
 
 

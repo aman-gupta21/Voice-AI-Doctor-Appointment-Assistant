@@ -34,3 +34,20 @@ The project includes Docker Compose and Caddy for a single VPS deployment. Copy 
 - Push this repository to GitHub (never commit `.env`).
 - Record a short browser demo showing number confirmation, availability, and a completed booking.
 - Explain the pipeline in your own words in the submission form.
+
+## Render deployment
+
+To serve the dashboard and API from one Render web service:
+
+1. Leave **Root Directory** blank so Render checks out the full repository.
+2. Set the build command:
+   ~~~bash
+   pip install uv && uv sync --project backend --active --frozen --no-dev && npm ci --prefix frontend && npm run build --prefix frontend
+   ~~~
+3. Set the start command:
+   ~~~bash
+   PYTHONPATH=backend uv run --project backend --active uvicorn api:app --host 0.0.0.0 --port $PORT
+   ~~~
+4. Leave VITE_API_URL unset so the dashboard calls the API on the same domain. Set backend secrets in Render. Set VITE_PIPECAT_URL to the public URL of a separately deployed Pipecat signaling service to enable browser calls.
+
+The API serves the built dashboard at / and keeps API routes under /api. Do not put provider keys in VITE_* variables.
