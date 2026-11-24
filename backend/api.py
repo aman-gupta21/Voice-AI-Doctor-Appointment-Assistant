@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from datetime import date
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -66,6 +66,11 @@ def authorize_internal(x_internal_key: str = Header(default="")):
 @app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {"status": "ok", "service": "careline-api", "health": "/health", "docs": "/docs"}
+
+
+@app.api_route("/favicon.ico", methods=["GET", "HEAD"], include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
 
 
 @app.get("/health")
