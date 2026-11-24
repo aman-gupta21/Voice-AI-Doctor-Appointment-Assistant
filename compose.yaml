@@ -1,0 +1,60 @@
+services:
+  api:
+    build: ./backend
+    command: ["uv", "run", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      DATABASE_PATH: /data/appointments.db
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Set INTERNAL_API_KEY in .env}
+      CORS_ORIGINS: https://${DOMAIN:?Set DOMAIN in .env}
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+
+  bot:
+    build: ./backend
+    command: ["uv", "run", "python", "bot.py", "--host", "0.0.0.0", "--port", "7860"]
+    environment:
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:?Set GOOGLE_API_KEY in .env}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:?Set ELEVENLABS_API_KEY in .env}
+      ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-EXAVITQu4vr4xnSDxMaL}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Set INTERNAL_API_KEY in .env}
+      APPOINTMENTS_API_URL: http://api:8000
+      PIPECAT_ICE_SERVERS: ${PIPECAT_ICE_SERVERS:-}
+    depends_on:
+      - api
+    ports:
+      - "7860:7860"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_PIPECAT_URL: ${VITE_PIPECAT_URL:-}
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - bot
+      - web
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+
